@@ -63,6 +63,7 @@ void setRegisterPin(int index, int value){
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 
+//ENCODER VARS
 int encoderPin1 = 2;
 int encoderPin2 = 3;
 
@@ -74,44 +75,53 @@ long lastencoderValue = 0;
 int lastMSB = 0;
 int lastLSB = 0;
 
-int lastStep = 15;
+//SAVE ADDRESS
+int address = 0;
+
+//TIMER VARS
 unsigned long currentMillis = 0;
 unsigned long previousMillis = 0;
 unsigned long pMillis = 0;
-const long interval = 20;
+
 bool blinky;
-bool button;
-bool lbutton;
+
+//STEPS ARRAY
 boolean steps[16];
+
+//CLOCK IN
+bool clkin;
+bool pclk;
+
+bool changedir;
+
+//DEFAULT VALUES
+int rstep=0;
 int curs=0;
 int lastcurs=0;
 int playhead=0;
-boolean clkin;
-boolean pclk;
-bool fwd=true;
-bool bwd=false;
-bool pend=false;
-bool rnd=false;
-bool changedir;
-int rstep=0;
-bool buttonActive=false;
-bool longPressActive=false;
-bool playModeMenu=false;
-unsigned long buttonTimer=0;
+int lastStep = 15;
 
+//SAVE CURSOR POSITIONS
 int saveCurs=0;
 int saveMenuCurs=0;
 int saveLastStepCurs=0;
-bool menuItem[4]{1,0,0,0};
+
+//RESET
 bool resIn=false;
 bool pRes=false;
-bool lastStepActive=false;
 
+//MENU
+bool menuItem[4]{1,0,0,0};
+bool playModeMenu=false;
 bool lastStepMenu=false;
-int address = 0;
-bool resetActive=false;
 
+unsigned long buttonTimer=0;
+
+bool buttonActive=false;
+bool longPressActive=false;
+bool lastStepActive=false;
 bool randomActive=false;
+bool resetActive=false;
 
 //MENU TIMES
 int playModeTime = 1000;
@@ -266,7 +276,7 @@ void setup() {
 ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////
 
-//DISPLAY WHAT'S HAPPENING
+//UPDATE LEDS ACCORDING TO WHAT'S HAPPENING
 void updateSteps() {
 if (!playModeMenu && !longPressActive && !lastStepMenu && !lastStepActive) {
 for (int i=0; i <= lastStep; i++){
