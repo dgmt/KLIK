@@ -1,6 +1,19 @@
 //By David Szebenyi 2016
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+//INCLUDE EEPROMEX LIBRARY
+
 #include <EEPROMex.h>
 #include <EEPROMVar.h>
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+//SET UP SHIFT REGISTERS FOR LEDS
 
 int SER_Pin = 8;   //pin 14 on the 75HC595
 int RCLK_Pin = 10;  //pin 12 on the 75HC595
@@ -46,6 +59,9 @@ void setRegisterPin(int index, int value){
   registers[index] = value;
 }
 
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 int encoderPin1 = 2;
 int encoderPin2 = 3;
@@ -82,7 +98,7 @@ bool buttonActive=false;
 bool longPressActive=false;
 bool playModeMenu=false;
 unsigned long buttonTimer=0;
-int playModeTime = 1000;
+
 int saveCurs=0;
 int saveMenuCurs=0;
 int saveLastStepCurs=0;
@@ -90,13 +106,24 @@ bool menuItem[4]{1,0,0,0};
 bool resIn=false;
 bool pRes=false;
 bool lastStepActive=false;
-int lastStepTime=2000;
+
 bool lastStepMenu=false;
 int address = 0;
 bool resetActive=false;
-int randomTime=3000;
+
 bool randomActive=false;
+
+//MENU TIMES
+int playModeTime = 1000;
+int lastStepTime=2000;
+int randomTime=3000;
 int resetTime=4000;
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+//EEPROM SAVE SETUP
 
 struct saveSteps {
 bool value;
@@ -106,6 +133,10 @@ int laststep;
 
 saveSteps saveStepsInput[21];
 saveSteps saveStepsOutput[21];
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
 
 void setup() {
   Serial.begin (9600);
@@ -132,6 +163,8 @@ void setup() {
 
   //reset all register pins
   clearRegisters();
+  
+  //WELCOME ANIMATION
   setRegisterPin(0,HIGH);
   setRegisterPin(1,LOW);
   setRegisterPin(2,LOW);
@@ -205,6 +238,7 @@ void setup() {
   writeRegisters();
   delay(100);
   
+  //LOAD LAST SAVED STATE
   EEPROM.readBlock(address, saveStepsOutput,21);
   
   for (int i=0;i<16;i++){
@@ -221,12 +255,18 @@ void setup() {
   
   setRegisterPin(curs, HIGH);
   
+  //GENERATE NEW RANDOM SEED
   randomSeed(analogRead(A0));
   
   writeRegisters();
   
 }
 
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+//DISPLAY WHAT'S HAPPENING
 void updateSteps() {
 if (!playModeMenu && !longPressActive && !lastStepMenu && !lastStepActive) {
 for (int i=0; i <= lastStep; i++){
@@ -271,6 +311,9 @@ for (int i=0; i <= lastStep; i++){
   }
 }
 
+//MENU PAGES
+
+//PLAYMODE PAGE
 if (longPressActive) {
     setRegisterPin(0, LOW);
     setRegisterPin(1, LOW);
@@ -293,6 +336,7 @@ if (longPressActive) {
     setRegisterPin(15, LOW);
   }
 
+//LAST STEP PAGE
 if (lastStepActive) {
     setRegisterPin(0, LOW);
     setRegisterPin(1, HIGH);
@@ -315,6 +359,7 @@ if (lastStepActive) {
     setRegisterPin(15, LOW);
   }
   
+//RANDOMIZE PAGE
 if (randomActive) {
     setRegisterPin(0, HIGH);
     setRegisterPin(1, LOW);
@@ -337,13 +382,14 @@ if (randomActive) {
     setRegisterPin(15, HIGH);
   }
 
+//RESET PAGE
 if (resetActive) {
     for (int i=0; i <= 15; i++){
       setRegisterPin(i, HIGH);
     }
   }
   
-  //PLAYMODE LEDS
+  //PLAYMODE CURSOR DISPLAY
   if (playModeMenu && !longPressActive && !lastStepMenu && !lastStepActive) {
     for (int i=0; i <= 3; i++){
       if (menuItem[curs]==0) {
@@ -398,7 +444,7 @@ if (resetActive) {
       
     }
   }
-  
+    //LAST STEP CURSOR DISPLAY
     if (lastStepMenu && !longPressActive && !playModeMenu && !lastStepActive) {
        if (lastStep == curs) {
         if (currentMillis - previousMillis >= 20) {
@@ -440,6 +486,11 @@ if (resetActive) {
   
 }
 
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+//SAVE FUNCTION
 void saveState() {
    for (int i=0;i<16;i++){
     saveStepsInput[i].value = steps[i];
@@ -455,13 +506,17 @@ void saveState() {
     EEPROM.updateBlock(address, saveStepsInput,21);
 }
 
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
 void loop() {
   
   currentMillis = millis();
   curs = encoderValue/4;
   updateSteps();
   
-  
+  //RESET INPUT
   resIn = digitalRead(6);
   if (resIn != pRes) {
     if (resIn == LOW) {
@@ -471,22 +526,22 @@ void loop() {
     pRes=resIn;
   }
   
-  
+  //TURN OFF THE LED OF THE PREVIOUS CURSOR POSITION
   if (curs != lastcurs && playModeMenu == false) {
     setRegisterPin(lastcurs, LOW); 
     lastcurs = curs;
   }
   
   if (curs != lastcurs && playModeMenu == true) {
-    //Serial.println(curs);
     lastcurs = curs;
   }
+  
   if (curs != lastcurs && lastStepMenu == true) {
-    //Serial.println(curs);
     setRegisterPin(lastcurs, LOW);
     lastcurs = curs;
   }
 
+//BUTTON FUNCTIONS
     if (digitalRead(4) == HIGH) {
       
       //BUTTON ACTIVE
@@ -655,11 +710,12 @@ void loop() {
     } 
     
   
+  //CLOCK INPUT
   clkin = digitalRead(5);
   if (clkin != pclk) {
     if (clkin == LOW) {
       
-
+      //PLAYMODES:
       
       //FWD MODE
       if (menuItem[0]==1) {
@@ -700,6 +756,7 @@ void loop() {
         playhead=rstep;
       }
 
+      //TURN ON TRIGGER ON OUTPUT
       if (steps[playhead]==1) {
         digitalWrite(11, HIGH);
       } else {
@@ -710,13 +767,20 @@ void loop() {
       pclk = clkin;
   }
   
+  //TURN OFF TRIGGER ON OUTPUT
   if (currentMillis - pMillis >= 2) {
             digitalWrite(11, LOW);
   }
   
+//LIGHT UP THE APPROPRIATE LEDS
 writeRegisters();
 }
 
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+
+//READ ENCODER FUNCTION
 void updateEncoder() {
   int MSB = digitalRead(encoderPin1); //MSB = most significant bit
   int LSB = digitalRead(encoderPin2); //LSB = least significant bit
@@ -727,7 +791,7 @@ void updateEncoder() {
       if(sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000) encoderValue --;
 
 
-
+    //LIMIT ENCODER VALUE TO APPROPRIATE RANGES
     if (!playModeMenu && !lastStepMenu) {
       if (encoderValue > (lastStep*4+3)) {
       encoderValue = 0;
